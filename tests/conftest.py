@@ -1,3 +1,4 @@
+from limiter import limiter
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine
@@ -25,6 +26,19 @@ def client_fixture(session):
         return session
     
     app.dependency_overrides[get_session] = get_session_override
+    
+    # Reset rate-limiter state so each test starts fresh(counts don't leak between tests)
+    limiter.reset()
+    
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()            # undo the override after the test
+
+@pytest.fixture(name="auth_client")
+def auth_client_fixture(client):
+    # Register a test user, log in and return a client that sends the token on every request.
+    client.post("/auth/register", json={"username":"tester", "password": "testpass"})
+    login = client.post("/auth/login", json={"username":"tester", "password": "testpass"})
+    token = login.json()["access_token"]
+    client.headers.update({"Authorization": f"Bearer {token}"})
+    return client

@@ -8,6 +8,23 @@ class Book(SQLModel, table=True):
     author: str
     year: int
 
+class User(SQLModel, table=True):
+    id: int | None = SQLField(default=None, primary_key=True)
+    username: str = SQLField(unique=True, index=True)
+    hashed_password: str
+
+class UserCreate(BaseModel):
+    username: str = Field(min_length=3, max_length=50)
+    password: str = Field(min_length=6, max_length=72)
+
+class UserResponse(BaseModel):
+    id: int
+    username: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+
 class BookCreate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     author: str = Field(min_length=1, max_length=100)
